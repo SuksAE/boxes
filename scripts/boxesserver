@@ -40,6 +40,8 @@ except ImportError:
     sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
     import boxes.generators
 
+build_version = -1
+
 class FileChecker(threading.Thread):
     def __init__(self, files=[], checkmodules=True):
         super(FileChecker, self).__init__()
@@ -386,6 +388,7 @@ class BServer:
   <li><a href="https://hackaday.io/project/10649-boxespy">""" + _("Home Page") + """</a></li>
   <li><a href="https://florianfesti.github.io/boxes/html/index.html">""" + _("Documentation") + """</a></li>
   <li><a href="https://github.com/florianfesti/boxes">""" + _("Sources") + """</a></li>
+  <li>build version:"""+ str(build_version) +""" </li>
 </ul>
 </div>
 """
@@ -539,6 +542,15 @@ class BServer:
 
 
 if __name__=="__main__":
+    try:
+        file_to_open = os.path.join(os.path.dirname(__file__), "..", "build_number")
+        f=open(file_to_open)
+        build_version = int(f.read())
+        f.close()
+    except:
+        build_version = -1
+    print("Boxes.py build version:",build_version)
+    
     if len(sys.argv) > 1:
         port = int(sys.argv[1])
     else:

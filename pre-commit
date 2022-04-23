@@ -1,0 +1,5 @@
+#!/bin/sh
+# To enable this hook, copy this file to .git\hooks
+
+git log master --pretty=oneline | wc -l > build_number
+git add build_number
