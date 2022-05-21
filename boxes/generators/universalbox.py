@@ -16,7 +16,7 @@
 
 from boxes import *
 from boxes.edges import Bolts
-from boxes.lids import _TopEdge, _ChestLid
+from boxes.lids import _TopEdge, _ChestLid, LidWithHandleSettings
 
 class UniversalBox(_TopEdge, _ChestLid):
     """Box with various options for different styles and lids"""
@@ -28,6 +28,7 @@ class UniversalBox(_TopEdge, _ChestLid):
         self.addTopEdgeSettings(roundedtriangle={"outset" : 1},
                                 hinge={"outset" : True})
         self.addSettingsArgs(edges.FlexSettings)
+        self.addSettingsArgs(LidWithHandleSettings)
         self.buildArgParser("top_edge", "bottom_edge",
                             "x", "y", "h", "outside")
         self.argparser.add_argument(
@@ -37,7 +38,7 @@ class UniversalBox(_TopEdge, _ChestLid):
             help="connections used for the vertical edges")
         self.argparser.add_argument(
             "--lid",  action="store", type=str, default="default (none)",
-            choices=("default (none)", "chest", "flat"),
+            choices=("default (none)", "chest", "flat", "flat with handle"),
             help="additional lid (for straight top_edge only)")
 
     def top_hole(self, x, y, top_edge):

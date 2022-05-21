@@ -15,7 +15,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from boxes import *
-from boxes.lids import _TopEdge, _ChestLid
+from boxes.lids import _TopEdge, _ChestLid, LidWithHandleSettings
 import math
 
 class UBox(_TopEdge, _ChestLid):
@@ -27,13 +27,14 @@ class UBox(_TopEdge, _ChestLid):
         Boxes.__init__(self)
         self.addTopEdgeSettings()
         self.addSettingsArgs(edges.FlexSettings)
+        self.addSettingsArgs(LidWithHandleSettings)
         self.buildArgParser("top_edge", "x", "y", "h")
         self.argparser.add_argument(
             "--radius",  action="store", type=float, default=30.0,
             help="radius of bottom corners")
         self.argparser.add_argument(
             "--lid",  action="store", type=str, default="default (none)",
-            choices=("default (none)", "chest", "flat"),
+            choices=("default (none)", "chest", "flat", "flat with handle"),
             help="additional lid")
         self.angle = 0
 

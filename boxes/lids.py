@@ -14,6 +14,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from boxes import *
+from boxes.edges import Settings
 
 class _ChestLid(Boxes):
 
@@ -74,11 +75,59 @@ class _ChestLid(Boxes):
         self.corner(90)
 
         self.move(tw, th, move, label=label)
+        
+    def cutHandleHole(self, x, y, ext):
+        ht = self.edgesettings.get('LidWithHandle')['HandleThickness']
+        hl = self.edgesettings.get('LidWithHandle')['HandleLength']
+        ad = self.edgesettings.get('LidWithHandle')['AlignmentDiameter']
+        self.moveTo((self.thickness / 4 + 0.5 * self.burn), (self.thickness / 4 + 1.5 * self.burn))
+        if ext == 0:
+            x += 2 * self.thickness 
+            y += 2 * self.thickness 
+        self.rectangularHole(x / 2, y / 2, self.thickness * ht, hl + ext * 2 * self.thickness, r=0, center_x=True, center_y=True)
+#        self.hole((2 - ext) * self.thickness + ad / 2, (2 - ext) * self.thickness + ad / 2, ad / 2) # two holes are enough for alingment
+        self.hole(x - (2 - ext) * self.thickness - ad / 2, (2 - ext) * self.thickness + ad / 2, ad / 2)
+        self.hole((2 - ext) * self.thickness + ad / 2, y - (2 - ext) * self.thickness - ad / 2, ad / 2)
+        self.moveTo(-1 * (self.thickness / 4 + 0.5 * self.burn), -1 * (self.thickness / 4 + 1.5 * self.burn))
 
     def drawAddOnLid(self, x, y, style):
+        hl = self.edgesettings.get('LidWithHandle')['HandleLength']
+        ht = self.edgesettings.get('LidWithHandle')['HandleThickness']
+        hh = self.edgesettings.get('LidWithHandle')['HandleHeight']
+        hr = self.edgesettings.get('LidWithHandle')['HandleRadius']
+        ad = self.edgesettings.get('LidWithHandle')['AlignmentDiameter']
+        if ad > self.thickness:
+            raise ValueError("LidWithHandle: maximum alingment diameter is material thickness")
+        
         if style == "flat":
             self.rectangularWall(x, y, "eeee", move="right", label="lid bottom")
             self.rectangularWall(x, y, "EEEE", move="up", label="lid top")
+        elif style == "flat with handle":
+            self.rectangularWall(x, y, "eeee", callback=[self.cutHandleHole(x, y, 1), ], move="right", label="lid bottom")
+            self.rectangularWall(x, y, "EEEE", callback=[self.cutHandleHole(x, y, 0),], move="up", label="lid top")
+            for i in range(ht):
+                if self.move(hl + 2 * self.thickness, hh + 2 * self.thickness, "right", True, label="Lid Handle " + str(i)):
+                    return
+                self.edge(hl + 2 * self.thickness)
+                self.corner(90)
+                self.edge(self.thickness)
+                self.corner(90)
+                self.edge(self.thickness)
+                self.corner(-90)
+                self.edge(hh + self.thickness - hr)
+                self.corner(90, hr)
+                self.edge(hl - 2 * hr)
+                self.corner(90, hr)
+                self.edge(hh + self.thickness - hr)
+                self.corner(-90)
+                self.edge(self.thickness)
+                self.corner(90)
+                self.edge(self.thickness)
+                self.corner(90)
+                self.moveTo(-self.burn, 0)
+                self.hole(self.thickness + ad * 2 , self.thickness, ad / 2)
+                self.hole(hl + self.thickness - ad * 2 , self.thickness, ad / 2)                                
+                self.move(hl + 2 * self.thickness, hh + 2 * self.thickness, "right", False, label="Lid Handle " + str(i))
         elif style == "chest":
             self.side(x, move="right", label="lid right")
             self.side(x, move="up", label="lid left")
@@ -87,6 +136,33 @@ class _ChestLid(Boxes):
         else:
             return False
         return True
+
+class LidWithHandleSettings(Settings):
+
+    """Settings for Flat Lid with Handle
+Values:
+* absolute_params
+
+ * AlignmentDiameter : 2.0 : diameter of alingment pin holes (in mm, 0 for None) 
+ * HandleLength : 30.0 : length of the handle (in mm)
+ * HandleHeight : 15.0 : height of the handle (in mm)
+ * HandleRadius :  5.0 : radius of the handle (in mm)
+
+* relative (in multiples of thickness)
+
+ * HandleThickness : 2 : thickness of handle (in multiples of material thickness)
+"""
+
+    absolute_params = {
+        "HandleLength" : 30.0,
+        "HandleHeight" : 15.0,
+        "HandleRadius" : 5.0,
+        "AlignmentDiameter" : 2.0,
+        }
+
+    relative_params = {
+        "HandleThickness" : 2,
+        }
 
 class _TopEdge(Boxes):
 
