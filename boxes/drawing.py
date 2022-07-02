@@ -760,41 +760,49 @@ class LBRN2Surface(Surface):
         if self.dbg: print ("8", num)
         
         cs = ET.SubElement(svg, "CutSetting", Type="Cut")
+        cs.tail = "\n"
         index    = ET.SubElement(cs, "index",    Value="3")         # green layer (ETCHING)
         name     = ET.SubElement(cs, "name",     Value="Etch")
         priority = ET.SubElement(cs, "priority", Value="0")         # is cut first
 
         cs = ET.SubElement(svg, "CutSetting", Type="Cut")
+        cs.tail = "\n"
         index    = ET.SubElement(cs, "index",    Value="6")         # cyan layer (ETCHING_DEEP)
         name     = ET.SubElement(cs, "name",     Value="Deep Etch")
         priority = ET.SubElement(cs, "priority", Value="1")         # is cut second
 
         cs = ET.SubElement(svg, "CutSetting", Type="Cut")
+        cs.tail = "\n"
         index    = ET.SubElement(cs, "index",    Value="7")         # magenta layer (MAGENTA)
         name     = ET.SubElement(cs, "name",     Value="C07")
         priority = ET.SubElement(cs, "priority", Value="2")         # is cut third
 
         cs = ET.SubElement(svg, "CutSetting", Type="Cut")
+        cs.tail = "\n"
         index    = ET.SubElement(cs, "index",    Value="4")         # yellow layer (YELLOW)
         name     = ET.SubElement(cs, "name",     Value="C04")
         priority = ET.SubElement(cs, "priority", Value="3")         # is cut third
 
         cs = ET.SubElement(svg, "CutSetting", Type="Cut")
+        cs.tail = "\n"
         index    = ET.SubElement(cs, "index",    Value="8")         # grey layer (WHITE)
         name     = ET.SubElement(cs, "name",     Value="C08")
         priority = ET.SubElement(cs, "priority", Value="4")         # is cut fourth
 
         cs = ET.SubElement(svg, "CutSetting", Type="Cut")
+        cs.tail = "\n"
         index    = ET.SubElement(cs, "index",    Value="1")         # blue layer (INNER_CUT)
         name     = ET.SubElement(cs, "name",     Value="Inner Cut")
         priority = ET.SubElement(cs, "priority", Value="5")         # is cut fifth
 
         cs = ET.SubElement(svg, "CutSetting", Type="Cut")
+        cs.tail = "\n"
         index    = ET.SubElement(cs, "index",    Value="0")         # black layer (OUTER_CUT)
         name     = ET.SubElement(cs, "name",     Value="Outer Cut")
         priority = ET.SubElement(cs, "priority", Value="6")         # is cut sixth
 
         cs = ET.SubElement(svg, "CutSetting", Type="Tool")
+        cs.tail = "\n"
         index    = ET.SubElement(cs, "index",    Value="30")        # T1 layer (ANNOTATIONS)
         name     = ET.SubElement(cs, "name",     Value="T1")        # tool layer do not support names
         priority = ET.SubElement(cs, "priority", Value="7")         # is not cut at all
