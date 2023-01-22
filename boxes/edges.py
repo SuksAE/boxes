@@ -23,6 +23,7 @@ import re
 from typing import Any
 
 from boxes import gears
+from boxes import Color
 
 
 def argparseSections(s):
@@ -868,6 +869,19 @@ Values:
         return self._edgeObjects(edges, boxes, chars, add)
 
 class FingerJointBase:
+    cutout = False
+    cutoutNum = 0
+    cutoutLen = 0
+    cutoutHight = 0
+
+#    cutout = True
+#    cutoutNum = 4
+#    cutoutLen = 2
+#    cutoutHight = 1
+
+
+    def __init__(self, boxes, sections, edge="e", slots=0) -> None:
+        super().__init__(boxes, Settings(boxes.thickness))
 
     def calcFingers(self, length, bedBolts):
         space, finger = self.settings.space, self.settings.finger
@@ -887,6 +901,48 @@ class FingerJointBase:
             leftover = length
 
         return fingers, leftover
+
+    def calcCutout(self, fingers, cutoutNum = 0, cutoutLen = 0):
+        cutAt = []
+        if cutoutNum % 2:
+            cutAt.append( (fingers - cutoutLen, cutoutLen * 2 + 1 ) )
+            if cutoutNum > 2:
+                dist = (fingers - cutoutLen) / (((cutoutNum - 1) / 2) + 1)
+                for i in range(math.trunc((cutoutNum - 1) / 2)):
+                    cutAt.append( (math.trunc(dist * (i + 1) - cutoutLen), cutoutLen * 2 + 1 ))
+                    cutAt.append( (math.ceil(2 * fingers - (dist * (i + 1)) - cutoutLen), cutoutLen * 2 + 1 ))
+#                    if self.debug:
+#                        print("calcCutout odd", fingers, cutAt, dist, (dist * (i + 1) - cutoutLen), (2 * fingers - (dist * (i + 1)) - cutoutLen), sep=' ', end='\n')
+        else:
+            dist = (2 * fingers) / (cutoutNum + 1)
+            for i in range(math.trunc(cutoutNum / 2)):
+                cutAt.append( (math.trunc(dist * (i + 1) - cutoutLen) - 1, cutoutLen * 2 + 1 ))
+                cutAt.append( (math.ceil(2 * fingers - dist * (i + 1) - cutoutLen) + 1, cutoutLen * 2 + 1 ))
+#                if self.debug:
+#                    print("calcCutout even", fingers, cutAt, dist, (dist * (i + 1) - cutoutLen) - 1, (2 * fingers - dist * (i + 1) - cutoutLen) + 1, sep=' ', end='\n')
+
+        cutAt.sort()
+        return(cutAt)
+
+    def FingerAndSpacers(self, length, bedBolts, positive, style="rectangular"):
+        s, f = self.settings.space, self.settings.finger
+        play = self.settings.play
+
+        fingers, leftover = self.calcFingers(length, bedBolts)
+
+        # not enough space for normal fingers - use small rectangular one
+        if (fingers == 0 and f and leftover > 0.75*self.settings.thickness and leftover > 4*play):
+            fingers = 1
+            f = leftover = leftover / 2.0
+            bedBolts = None
+            style = "rectangular"
+
+        if not positive:
+            f += play
+            s -= play
+            leftover -= play
+            
+        return (fingers, leftover, f, s, style)
 
     def fingerLength(self, angle):
         # sharp corners
@@ -952,46 +1008,78 @@ class FingerJointEdge(BaseEdge, FingerJointBase):
 
         positive = self.positive
         t = self.settings.thickness
-
-        s, f = self.settings.space, self.settings.finger
         thickness = self.settings.thickness
         style = self.settings.style
-        play = self.settings.play
 
-        fingers, leftover = self.calcFingers(length, bedBolts)
-
-        # not enough space for normal fingers - use small rectangular one
-        if (fingers == 0 and f and
-            leftover > 0.75*thickness and leftover > 4*play):
-            fingers = 1
-            f = leftover = leftover / 2.0
-            bedBolts = None
-            style = "rectangular"
-
-        if not positive:
-            f += play
-            s -= play
-            leftover -= play
+        fingers, leftover, f, s , style = self.FingerAndSpacers(length, bedBolts, positive, style)
 
         self.edge(leftover / 2.0, tabs=1)
 
         l1,l2 = self.fingerLength(self.settings.angle)
         h = l1-l2
 
-        d = (bedBoltSettings or self.bedBoltSettings)[0]
+        d = (bedBoltSettings or self.bedBoltSettings)[0]        
 
-        for i in range(fingers):
-            if i != 0:
-                if not positive and bedBolts and bedBolts.drawBolt(i):
-                    self.hole(0.5 * s,
-                              0.5 * self.settings.thickness, 0.5 * d)
+        if self.debug:
+            self.ctx.save()
+            self.hole(-s, 0, 0.5, color=[ 1.0, 0.0, 0.0 ])
+            self.text("1", f/2, -2, fontsize=2, color=[ 1.0, 0.0, 0.0 ])
+            for i in range(fingers-1):
+                self.hole(i*f + (i+1)*(s), 0, 0.5, color=[ 1.0, 0.0, 0.0 ])
+                self.text(str(i+2), f/4+i*f + (i+2)*(s), -2, fontsize=2, color=[ 1.0, 0.0, 0.0 ])
+            for i in range(2*fingers):
+                self.ctx.save()
+                self.text(str(i+1), math.trunc(i/2) * f + math.ceil(i/2) * s , 2, fontsize=2, color=[ 1.0, 0.0, 0.0 ])
+                self.ctx.restore()
+            self.ctx.restore()
 
-                if positive and bedBolts and bedBolts.drawBolt(i):
-                    self.bedBoltHole(s, bedBoltSettings)
+        if self.cutout:
+            cutAt=self.calcCutout(fingers)
+            try:
+                startAt = cutAt.pop(0)
+            except:
+                self.cutout = False
+            Draw = 1
+            for i in range(2*fingers - 1):
+                if self.debug:
+                    self.ctx.save()
+                    self.text(str(i+1), 0, 2, fontsize=2, color=[ 1.0, 0.0, 0.0 ])
+                    self.ctx.restore()
+                if (i+1) == startAt[0]:
+                    if self.debug:
+                        self.ctx.save()
+                        self.hole(0, 0, 1, color=[ 1.0, 0.0, 0.0 ])
+                        self.ctx.restore()
+                    self.draw_finger(( math.trunc(startAt[1]/2) * f + math.ceil(startAt[1]/2) * s), self.cutoutHight if positive else self.cutoutHight + thickness, "rectangular", False, False)
+                    if self.debug:
+                        self.ctx.save()
+                        self.hole(0, 0, 1, color=[ 1.0, 0.0, 0.0 ])
+                        self.ctx.restore()
+                    Draw = 0
                 else:
-                    self.edge(s)
-            self.draw_finger(f, h, style,
-                             positive, i < fingers//2)
+                    if Draw:
+                        if i%2:
+                            self.edge(s)
+                        else:
+                            self.draw_finger(f, h, style, positive, i < fingers//2)
+                if (i+1) == startAt[0] + startAt[1] - 1:
+                    Draw = 2
+                    try:
+                        startAt = cutAt.pop(0)
+                    except:
+                        startAt = (2*fingers + 1,0)
+                        pass
+        else:
+            for i in range(fingers):
+                if i != 0:
+                    if not positive and bedBolts and bedBolts.drawBolt(i):
+                        self.hole(0.5 * s,
+                                  0.5 * self.settings.thickness, 0.5 * d)
+                    if positive and bedBolts and bedBolts.drawBolt(i):
+                        self.bedBoltHole(s, bedBoltSettings)
+                    else:
+                        self.edge(s)
+                self.draw_finger(f, h, style, positive, i < fingers//2)
 
         self.edge(leftover / 2.0, tabs=1)
 
@@ -1038,17 +1126,10 @@ class FingerHoles(FingerJointBase):
         """
         with self.boxes.saved_context():
             self.boxes.moveTo(x, y, angle)
-            s, f = self.settings.space, self.settings.finger
             p = self.settings.play
             b = self.boxes.burn
-            fingers, leftover = self.calcFingers(length, bedBolts)
 
-            # not enough space for normal fingers - use small rectangular one
-            if (fingers == 0 and f and
-                leftover > 0.75*self.settings.thickness and leftover > 4*p):
-                fingers = 1
-                f = leftover = leftover / 2.0
-                bedBolts = None
+            fingers, leftover, f, s , style = self.FingerAndSpacers(length, bedBolts, True, "rectangular")
 
             if self.boxes.debug:
                 self.ctx.rectangle(b, -self.settings.width / 2 + b,
